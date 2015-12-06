@@ -1,0 +1,397 @@
+﻿// ----------- User settings Start -----------------//
+var.attackSpeed = 2.02 // Attack Speed setting
+var.useRBmacro = 0 // RB  macro  on: 1, off: 0
+
+var.useBfixed = 1 // B button  Fixed on:1 , off: 0
+var.useXfixed = 0 // X button Fixed on:1 , off: 0
+var.useRBfixed = 0 // RB  Fixed on:1 , off: 0
+var.useRTfixed = 0 // RT  Fixed on:1 , off: 0
+
+var.useVibration = 0 // vibration on:1 , off:0
+var.circleType = 1 // 1: Normal circle 0: Ellipse circle
+var.useItemToolTip = 1 //  Item ToolTip on:1, off:0
+var.lootingType = 1 // 1: loot all 0: loot one by one
+var.LT4SpringMode = 1 // 1: LT for spring mode   0: fixed circle mode
+var.useSound = 1 // 1: sound on 0: sound off
+
+var.autoRBmacro = 0
+// ----------- User settings End ---------------//
+
+var.offsetY4Range = 50
+var.offsetY4Melee = 80
+var.offsetY4Chapter2 = 30
+var.offsetY4Looting = 34
+
+var.circleA4Range = 70
+var.circleA4Melee = 90
+var.circleA4Looting = 16
+
+var.circleB4Melee = 430
+var.circleB4Range = 730
+
+var.springW = 800
+var.springH = 450
+
+var.mspeedR = 4
+var.mspeedL = 2
+
+var.dzL = 0.25
+var.dzLDelta4M = var.dzL - 0.03
+var.dzLDelta4R = var.dzL - 0.13
+var.dzL4Loot = 0.20
+var.dzR = 0.20
+
+var.aDelayTime = (100 / var.attackSpeed) / 100
+var.aDelayTime1 = var.aDelayTime * 0.50
+var.aDelayTime2 = var.aDelayTime * 0.50
+
+var.keepDownTime = 0.5
+var.YdelayTime = 0.7
+
+// toggle circle center pos Y for chapter 2 boss
+var.toggleCenter = var.toggleCenter //XOR pressed(xinput.Left)
+
+// toggle circle center and circle size for looting
+var.toggleLootingMode  = var.toggleLootingMode XOR pressed(xinput.LeftThumb)
+
+// LT is pressed
+if var.LTtoggle4SpringMode = 1 then
+   var.toggleLT = var.toggleLT XOR pressed(xinput.LeftTrigger)
+endif
+
+var.leftborder = (window.Width - window.ClientWidth) / 2
+var.middleX = window.Left + window.Width / 2
+var.middleY = window.Top + window.Height - var.leftborder - window.ClientHeight/2 - var.offsetY
+var.topborder = window.Height - window.ClientHeight - var.leftborder
+
+// set no vibration when RS freemode or no use Vibration
+if var.switch = 1 or var.useVibration = 0 or var.toggleLootingMode then
+  var.vib1A = 0
+  var.vib2A = 0
+  var.vib1B = 0
+  var.vib2B = 0
+  var.vib1C = 0
+  var.vib2C = 0
+else
+  var.vib1A = 0.08
+  var.vib2A = 0.22
+  var.vib1B = 0.12
+  var.vib2B = 0.12
+
+endif
+
+if var.switch == 0 then
+   var.rmx = xinput.Joy1X
+   var.rmy = -xinput.Joy1Y
+
+   if xinput.LeftTrigger then
+      var.rmxDelta = var.rmx > var.dzLDelta4R or var.rmx < -var.dzLDelta4R
+      var.rmyDelta = var.rmy > var.dzLDelta4R or var.rmy < -var.dzLDelta4R
+   else
+      var.rmyDelta = var.rmy > var.dzLDelta4M or var.rmy < -var.dzLDelta4M
+      var.rmxDelta = var.rmx > var.dzLDelta4M or var.rmx < -var.dzLDelta4M
+   endif
+
+
+   if var.toggleLootingMode  then
+      var.rmx = var.rmx
+      var.rmy = var.rmy
+   else
+      var.rmx = smooth(var.rmx,8)
+      var.rmy = smooth(var.rmy,8)
+
+   endif
+
+   var.angle = atan2(var.rmx,var.rmy)
+   var.mxr = sin(var.angle)
+   var.myr = cos(var.angle)
+
+   if var.rmxDelta or var.rmyDelta then
+      mouse.CursorPos = [var.middleX,var.middleY] + [var.mxr*var.circle,var.myr*var.circle]
+   endif
+
+
+elseif var.switch == 2 then
+   var.rmx = deadzone(xinput.Joy1X, var.dzL)
+   var.rmy = deadzone(-xinput.Joy1Y, var.dzL)
+   var.rmx = ensuremaprange(var.rmx,-1,1,-65,65)
+   var.rmy = ensuremaprange(var.rmy,-1,1,-65,65)
+
+   //allow mouse movement by other means and update position if it moved
+   if [round(var.rmmx),round(var.rmmy)] != mouse.CursorPos then [var.rmmx,var.rmmy] = mouse.CursorPos
+   //floating point storage to improve slow movement.
+   [var.rmmx,var.rmmy] = [var.rmmx,var.rmmy] + [var.rmx,var.rmy] / var.mspeedL
+
+   //clamp mouse inside gamescreen (windowed)
+   var.rmmx = max(var.rmmx,window.Left+var.leftborder)
+   var.rmmx = min(var.rmmx,window.Left+var.leftborder+window.ClientWidth-1)
+   var.rmmy = max(var.rmmy,window.Top+var.topborder)
+   var.rmmy = min(var.rmmy,window.Top+var.topborder+window.ClientHeight-1)
+   //avoid moving the mouse to the saame spot its already at
+   if [var.rmx,var.rmy] != [0,0] then mouse.cursorpos = [var.rmmx,var.rmmy]
+
+elseif var.switch = 1 then
+
+   var.rmx = deadzone(xinput.Joy2X, var.dzR)
+   var.rmy = deadzone(-xinput.Joy2Y,  var.dzR)
+   var.rmx = ensuremaprange(var.rmx,-1,1,-65,65)
+   var.rmy = ensuremaprange(var.rmy,-1,1,-65,65)
+
+   //allow mouse movement by other means and update position if it moved
+   if [round(var.rmmx),round(var.rmmy)] != mouse.CursorPos then [var.rmmx,var.rmmy] = mouse.CursorPos
+   //floating point storage to improve slow movement.
+   [var.rmmx,var.rmmy] = [var.rmmx,var.rmmy] + [var.rmx,var.rmy] / var.mspeedR
+
+   //clamp mouse inside gamescreen (windowed)
+   var.rmmx = max(var.rmmx,window.Left+var.leftborder)
+   var.rmmx = min(var.rmmx,window.Left+var.leftborder+window.ClientWidth-1)
+   var.rmmy = max(var.rmmy,window.Top+var.topborder)
+   var.rmmy = min(var.rmmy,window.Top+var.topborder+window.ClientHeight-1)
+   //avoid moving the mouse to the saame spot its already at
+   if [var.rmx,var.rmy] != [0,0] then
+      mouse.cursorpos = [var.rmmx,var.rmmy]
+
+      if var.useItemToolTip = 1 then
+         if xinput.Joy2X or -xinput.Joy2Y then
+            release(key.LeftControl)
+            key.LeftControl = false
+         else
+            press(key.LeftControl)
+
+         endif
+      else
+            release(key.LeftControl)
+            key.LeftControl = False
+      endif
+  endif
+
+elseif var.switch = 3 then
+   var.rmx = smooth(xinput.Joy1X,8)
+   var.rmy = smooth(-xinput.Joy1Y,8)
+   var.rmmx = ensuremaprange(var.rmx,-1,1,-var.springW,var.springW)
+   var.rmmy = ensuremaprange(var.rmy,-1,1,-var.springH,var.springH)
+
+   mouse.CursorPos = [var.middleX,var.middleY] + [var.rmmx,var.rmmy]
+endif
+
+if var.switch = 0 or var.switch = 2 then
+   release(key.LeftControl)
+   key.LeftControl = false
+endif
+
+if xinput.Joy2X or -xinput.Joy2Y then var.switch = 1
+
+if xinput.Down or xinput.Up then
+   var.switch = 1
+endif
+
+if (xinput.Joy1X or -xinput.Joy1Y) and (not xinput.Y) then
+   var.switch = 0
+
+   if var.toggleLootingMode then
+      var.circle = var.circleA4Looting
+   else
+      if var.circleType = 1 then
+         var.circle = var.circleA4Melee
+      else
+         var.circle = var.circleA4Range
+      endif
+  endif
+
+endif
+
+if var.useSound = 1 then
+    if xinput.LeftThumb then
+       if var.toggleLootingMode then
+          say("Item Loot Mode")
+          wait 1.5s
+       else
+          if var.LTtoggle4SpringMode = 1 then
+             say("Spring mode")
+             wait 1.5s
+          else
+             say("Normal Mode")
+             wait 1.5s
+          endif
+
+       endif
+   endif
+
+endif
+
+if var.toggleCenter then
+   var.offsetY = var.offsetY4Chapter2
+else
+   if var.circleType = 1 then
+      var.offsetY = var.offsetY4Melee
+   else
+      var.offsetY = var.offsetY4Range
+   endif
+endif
+
+
+if var.toggleLootingMode then
+   var.offsetY = var.offsetY4Looting
+endif
+
+
+if xinput.Right then
+   var.switch = 1
+   //mouse.CursorPos = [1400,700]
+endif
+
+if (var.switch != 1) and (var.switch != 2) then
+   var.switch = 0
+
+   if var.toggleLootingMode then
+      var.circle = var.circleA4Looting
+   else
+      if var.circleType = 1 then
+         var.circle = var.circleA4Melee
+      else
+         var.circle = var.circleA4Range
+      endif
+   endif
+endif
+
+if xinput.A then
+   xinput.Vibration1 = var.vib1A
+   xinput.Vibration2 = var.vib2A
+   wait var.aDelayTime1 s
+   xinput.Vibration1 = 0
+   xinput.Vibration2 = 0
+   wait var.aDelayTime2 s
+endif
+
+if released(xinput.A) then
+   xinput.Vibration1 = 0
+   xinput.Vibration2 = 0
+endif
+
+if xinput.B or xinput.X or xinput.RightShoulder or xinput.RightTrigger then
+   xinput.Vibration1 = var.vib1B
+   xinput.Vibration2 = var.vib2B
+elseif released(xinput.B) or released(xinput.X) or released(xinput.RightShoulder) or released(xinput.RightTrigger)  then
+   if var.toggleLootingMode then
+       var.circle = var.circleA4Looting
+   else
+       if var.circleType = 1 then
+          var.circle = var.circleA4Melee
+       else
+          var.circle = var.circleA4Range
+       endif
+   endif
+
+   xinput.Vibration1 = 0
+   xinput.Vibration2 = 0
+endif
+
+if keepdown(xinput.B, var.keepDownTime) or keepdown(xinput.X, var.keepDownTime) or keepdown(xinput.RightShoulder, var.keepDownTime) or keepdown(xinput.RightTrigger, var.keepDownTime) then
+   xinput.Vibration1 = var.vib1B
+   xinput.Vibration2 = var.vib2B
+elseif ( (not keepdown(xinput.B, var.keepDownTime)) or (not keepdown(xinput.X, var.keepDownTime)) or (not keepdown(xinput.RightShoulder, var.keepDownTime)) or (not keepdown(xinput.RightTrigger, var.keepDownTime)) ) and (not xinput.A) then
+   if var.btnYvib != 1 then
+      xinput.Vibration1 = 0
+      xinput.Vibration2 = 0
+   endif
+endif
+
+
+if xinput.A and not xinput.LeftTrigger then
+   if not var.toggleLootingMode then
+      wait 70 ms
+      key.F12 = False
+      key.LeftShift = xinput.A
+   endif
+
+else
+   if not xinput.LeftTrigger then
+     if xinput.Y or xinput.B or xinput.X or xinput.RightShoulder or xinput.RightTrigger then
+       key.F12 = false
+
+       if pressed(xinput.B) and var.useBfixed = 1 then press(key.LeftShift)
+       if pressed(xinput.X) and var.useXfixed = 1 then press(key.LeftShift)
+       if pressed(xinput.RightShoulder) and var.useRBfixed = 1 then press(key.LeftShift)
+       if pressed(xinput.RightTrigger) and var.useRTfixed = 1 then press(key.LeftShift)
+
+
+     else
+       if released(xinput.B) and var.useBfixed = 1 then release(key.LeftShift)
+       if released(xinput.X) and var.useXfixed = 1 then release(key.LeftShift)
+       if released(xinput.RightShoulder) and var.useRBfixed = 1 then release(key.LeftShift)
+       if released(xinput.RightTrigger) and var.useRTfixed = 1 then release(key.LeftShift)
+
+
+       var.mxa = deadzone(xinput.Joy1X, var.dzL)
+       var.mya = deadzone(-xinput.Joy1Y, var.dzL)
+       var.mxa = ensuremaprange(var.mxa,-1,1,-65,65)
+       var.mya = ensuremaprange(var.mya,-1,1,-65,65)
+
+       var.mxaOff = deadzone(xinput.Joy1X, var.dzL4Loot)
+       var.myaOff = deadzone(-xinput.Joy1Y, var.dzL4Loot)
+       var.mxaOff = ensuremaprange(var.mxa,-1,1,-65,65)
+       var.myaOff = ensuremaprange(var.mya,-1,1,-65,65)
+
+       if var.toggleLootingMode then
+          if var.lootingType = 1 then
+             press(mouse.LeftButton) = [var.mxa, var.mya]
+             release(mouse.LeftButton) = [var.mxaOff, var.myaOff]
+          else
+             press(key.LeftControl) = xinput.Joy1X < var.dzL4Loot
+             press(key.LeftControl) = xinput.Joy1Y < var.dzL4Loot
+             release(key.LeftControl) = xinput.Joy1Y > var.dzL4Loot
+             release(key.LeftControl) = xinput.Joy1Y > var.dzL4Loot
+          endif
+       endif
+
+       if var.toggleLootingMode and var.lootingType = 1 and var.LTtoggle4SpringMode = 1 then
+          key.F12 = false
+       else
+          key.F12 = [var.mxa, var.mya]
+       endif
+
+     endif
+   endif
+
+endif
+
+if xinput.RightTrigger then
+   press(key.Console)
+   press(mouse.LeftButton)
+endif
+
+if released(xinput.RightTrigger) then
+   release(key.Console)
+   release(mouse.LeftButton)
+endif
+
+if (xinput.Back or xinput.Down or key.LeftAlt or key.Enter or key.Tab or key.Escape) and var.useItemToolTip = 1 then
+   release(key.LeftControl)
+   key.LeftControl = false
+endif
+
+
+Key.One = XInput.A
+//key.Two = xinput.Y
+
+Key.Four = XInput.X
+
+//key.LeftAlt = xinput.LeftThumb
+
+key.Escape = xinput.Start
+key.T = xinput.Back
+
+key.Tab = xinput.Up and (not heldDown(xinput.Up,0.2))
+key.M = heldDown(xinput.Up, 0.2)
+
+//key.J = xinput.Left
+key.S = xinput.Down
+
+Mouse.LeftButton = XInput.RightShoulder
+Mouse.RightButton = XInput.LeftTrigger
+Key.Two = XInput.B
+Key.Three = XInput.Y
+Key.Q = XInput.Left
+Key.Minus = XInput.LeftShoulder
+Key.Enter = XInput.Right
+
